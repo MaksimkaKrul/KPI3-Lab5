@@ -1,0 +1,75 @@
+services:
+  balancer:
+    build:
+      context: .
+      target: lb
+    ports:
+      - "8090:8090"
+    environment:
+      - INTEGRATION_TEST=true
+    depends_on:
+      server1:
+        condition: service_healthy
+      server2:
+        condition: service_healthy
+      server3:
+        condition: service_healthy
+    networks:
+      - testnet
+
+  server1:
+    build:
+      context: .
+      target: server
+    environment:
+      - SERVER_NAME=server1
+    healthcheck:
+      test: ["CMD", "wget", "-q", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    networks:
+      - testnet
+
+  server2:
+    build:
+      context: .
+      target: server
+    environment:
+      - SERVER_NAME=server2
+    healthcheck:
+      test: ["CMD", "wget", "-q", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    networks:
+      - testnet
+
+  server3:
+    build:
+      context: .
+      target: server
+    environment:
+      - SERVER_NAME=server3
+    healthcheck:
+      test: ["CMD", "wget", "-q", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    networks:
+      - testnet
+
+  integration-test:
+    build:
+      context: .
+      target: test
+    depends_on:
+      - balancer
+    environment:
+      - INTEGRATION_TEST=1
+    networks:
+      - testnet
+
+networks:
+  testnet:
+    driver: bridge
